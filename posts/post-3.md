@@ -13,6 +13,8 @@ tags:
 
 The lecture on modular design came at a useful point. We already had a rough sense of what the app needed to do but hadn't made deliberate decisions about how to structure the code so that multiple people could work on different parts at the same time.
 
+We've been using Cursor as our editor and relying on Claude to help write code and reason through architectural decisions. That combination was especially useful early on, when it wasn't obvious where certain logic belonged. Asking Claude whether something was a model concern or a controller concern meant we could settle those questions once rather than refactoring the same logic later. Cursor's inline suggestions also helped us move faster on the boilerplate, the route stubs, model queries, and template wiring, so we could focus on the parts that actually required design decisions.
+
 The pattern we followed is MVC. Models handle all the database queries and nothing else. Getting a list of ingredient tips or inserting a new recipe lives in src/models/ and doesn't appear anywhere in the route logic. Controllers are the functions that handle incoming requests, pull from models, and pass data to views. Routes in index.ts are one line each. Views are the templates.
 
 The layout that wraps every community page is defined once in views/layouts/hub.html.tmpl. It includes the sidebar nav with the current page marked, and every community page sets view.layout = 'hub' to get it. That one decision saved a lot of duplicated markup and means a change to the nav happens in one file rather than across every page.
