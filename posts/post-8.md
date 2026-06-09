@@ -3,7 +3,7 @@ title: "That's a wrap"
 week: 12
 date: 2026-04-14
 author: Natasha Png
-summary: "A final reflection on SEAblings: Lighthouse performance results, user testing insights, what shipped for MVP, and what I learned building a full stack web app from scratch."
+summary: "A final reflection on SEAblings: Lighthouse results, user testing insights, what shipped for MVP, and what I learned building a full stack web app from scratch."
 tags:
   - reflection
   - performance
@@ -133,13 +133,11 @@ tags:
 }
 </style>
 
-That's a wrap for the semester! This unit was a roller coaster and I'm glad that it is over... JK! I really enjoyed this unit and being able to work in a collaborative team. Now let's look back and reflect.
+That's a wrap for the semester! This unit was a roller coaster and I'm glad that it is over... JK! I genuinely enjoyed this unit and being able to work in a collaborative team. Now let's look back and reflect.
 
-## Performance
+## Performance Evaluation
 
-### Performance Evaluation
-
-To evaluate the application's performance, we ran a Lighthouse audit on the local development server. The results returned a Performance score of 91, with supporting scores of 87 for Accessibility, 91 for SEO, and 70 for Best Practices.
+To evaluate the application, we ran a Lighthouse audit on the local development server. The results returned a Performance score of 91, Accessibility 87, SEO 91, and Best Practices 70.
 
 <div class="lh-panel">
   <div class="lh-scores">
@@ -210,102 +208,115 @@ To evaluate the application's performance, we ran a Lighthouse audit on the loca
 
 ![Lighthouse performance audit](assets/reflection/lighthouse-performance.png)
 
-### Best Practices (70)
+The Best Practices score was mainly affected by the lack of HTTPS. Since the audit was run locally rather than on a deployed production environment, this was expected. Lighthouse also flagged missing Content Security Policy and HSTS headers, which would normally be configured at the hosting layer. With more time, adding a basic CSP would improve security.
 
-The Best Practices score of 70 was primarily dragged down by the absence of HTTPS, which Lighthouse flagged across all five requests made during the audit. Since the application was tested against a local development server (`http://0.0.0.0:3000`) rather than a deployed production environment, HTTPS was not configured, which is expected and intentional at this stage of the project. A production deployment would resolve this automatically, as platforms like Render, Fly.io, or Vercel provision TLS certificates by default.
-
-The audit also flagged the absence of a Content Security Policy (CSP) and HSTS header. These are HTTP response headers that would typically be configured at the server or hosting layer in production to mitigate XSS and protocol downgrade attacks. With more time, adding a CSP header to the MojoJS application, even a basic one restricting script sources, would address this and meaningfully harden the app against cross-site scripting.
-
-The remaining console error (`crypto.randomUUID is not a function`) was traced to a Chrome browser extension injected during testing, not the application itself, and can be disregarded.
-
-In summary, the Best Practices score reflects the absence of production infrastructure rather than flaws in the application code, and would improve significantly upon deployment.
+The remaining console error came from a Chrome extension rather than our application, so it can be ignored. Overall, the lower Best Practices score reflects missing production infrastructure rather than issues with the application itself.
 
 ![Lighthouse best practices audit](assets/reflection/lighthouse-bestpractices.png)
 
 ### Strengths
 
-The application performed particularly well on interactivity and visual stability. Total Blocking Time (TBT) came in at 0 ms, meaning the main thread was never blocked long enough to delay user input, so the app feels immediately responsive once it loads. Cumulative Layout Shift (CLS) was also 0, indicating no unexpected visual movement as the page renders, which contributes to a smooth user experience.
+The application performed particularly well in responsiveness and visual stability. Total Blocking Time was 0 ms, meaning user interactions were never delayed, and Cumulative Layout Shift was also 0, preventing unexpected movement during rendering.
 
-The accessibility score of 87 reflects deliberate attention to semantic HTML throughout development. ARIA labels, proper heading hierarchy, form labels, and sufficient touch target sizes all contributed. It sits just below the green threshold of 90, which gives a clear target for improvement in a follow-up pass.
+The Accessibility score of 87 reflects the effort we put into semantic HTML, heading hierarchy, form labels, and touch target sizes. While it falls just below the green threshold, it provides a clear target for future improvements.
 
 ### Weaknesses
 
-The main performance bottleneck is the Largest Contentful Paint (LCP) of 1.9 seconds, which Lighthouse flagged as needing improvement. The First Contentful Paint (FCP) was strong at 0.8 seconds, but the gap between FCP and LCP suggests a large element (likely a hero image or above-the-fold card) is loading late. The main stylesheet `hub.css` and Google Fonts (DynaPuff) both sit in the critical render path and contribute to this delay.
+The biggest performance issue was the Largest Contentful Paint of 1.9 seconds. Although the First Contentful Paint was strong at 0.8 seconds, the delay suggests a large element was loading later than ideal. Google Fonts and our main stylesheet contributed to this.
 
-The accessibility score of 87 is amber and the issues behind it are fixable. Some of the ARIA attributes we added are not actually read correctly by screen readers. Applying `aria-label` to non-interactive elements or using roles incorrectly means assistive technology either ignores them or reads them in a confusing order. Font sizes are also a recurring issue, with several labels and secondary text elements falling below the recommended minimum, making the interface harder to use for people with low vision. Both are things we would have caught and fixed if we had run the audit earlier in the build rather than at the end.
+Lighthouse also identified accessibility issues with some ARIA attributes and font sizes. These problems were fixable, but we only discovered them near the end of the semester when there was little time left to address them.
 
 ![Lighthouse accessibility audit](assets/reflection/lighthouse-accesibility.png)
 
-Lighthouse also flagged that `hub.css` (43 KB) carries an estimated 39 KB of unused CSS on any given page. This is a direct consequence of the single-file CSS architecture used throughout the project, where all styles across all pages are loaded upfront regardless of which page the user is on. Similarly, `hub.css` has no cache headers set, meaning repeat visitors re-download the full stylesheet every visit.
+Another issue was our CSS architecture. Because we used a single stylesheet for the whole application, Lighthouse estimated that most of the file was unused on any given page. Cache headers were also absent, meaning returning users would re-download assets every visit.
 
-### What I would improve with more time
+### What I Would Improve
 
-The highest-impact change would be addressing the Google Fonts render-blocking issue, either by adding `font-display: swap` to allow text to render before the custom font loads, or by self-hosting the font files to eliminate the external network dependency entirely.
+The biggest improvement would be addressing render-blocking fonts through `font-display: swap` or self-hosting. I would also minify the CSS, split styles by page, and configure caching for static assets.
 
-For the CSS, I would introduce a build step to minify the stylesheet (estimated saving of 12 KB) and consider splitting it into page-specific bundles or using a tool like PurgeCSS to remove unused rules per route. Setting appropriate `Cache-Control` headers on static assets like `hub.css` and `htmx.min.js` would also meaningfully improve load times for returning users.
-
-It is worth noting that the audit was run on the `/login` redirect rather than the intended authenticated page, since Lighthouse cannot log in automatically. Running it against authenticated routes would give a more complete picture of performance under real usage conditions.
-
-More broadly, running the Lighthouse audit earlier in the semester, mid-build rather than at the end, would have given us time to actually act on the accessibility findings. The ARIA and font size issues are not difficult to fix, but finding them on the last week meant there was no capacity left to address them. Making Lighthouse a regular checkpoint, rather than a final step, is something I would do differently next time.
+More broadly, I would run Lighthouse earlier in the development process rather than treating it as a final step. Discovering accessibility issues earlier would have given us time to act on them.
 
 ## User Experience
 
-To improve on the user experience, we ran two user testing sessions. We deliberately chose Southeast Asians who cook to help us with this testing.
+We conducted two usability tests with Southeast Asian users who cook.
 
 <div class="photo-row">
   <img src="assets/reflection/usertesting-01.JPG" alt="User testing session 1">
   <img src="assets/reflection/usertesting-02.JPG" alt="User testing session 2">
 </div>
 
-**Tasks:**
+Both participants completed all tasks successfully, including browsing the feed, posting a recipe, and using the ingredient map.
 
-- Browsing the feed
-- Posting a recipe
-- Finding an ingredient on the map
+P1, a design student, highlighted issues with CTA hierarchy, icon-heavy buttons, and confusion around the "Post a Tip" feature. Despite this, they validated our core concept with the comment:
 
-### Test insights
+> "A lot of the times the SE Asian recipes are usually shared within families so having a small dedicated community would help a lot."
 
-Both participants were able to complete all tasks. P1, a design student, flagged three interface issues: CTA hierarchy confusion, an icon-heavy layout that made action buttons hard to distinguish, and an unexpected destination when clicking "post a tip", which led to the recipe posting form rather than a tips page. Despite this, P1 offered a quote that directly validated our core concept: "A lot of the times the SE Asian recipes are usually shared within families so having a small dedicated community would help a lot." P1 rated the app 3/5.
+P1 rated the app 3/5.
 
 ![CTA hierarchy issue flagged during user testing](assets/reflection/CTA-hierachy.png)
 
-P2 rated it 5/5 and navigated without any visible confusion. However, P2 was notably more tech-savvy than our target audience, which limits how much weight this score carries. It likely reflects their prior experience with web applications rather than the design's clarity for a general user.
+P2 rated it 5/5 and experienced no confusion, although they were significantly more tech-savvy than our intended audience.
 
-### Actions taken
+### Actions Taken
 
-Changes were made following the usability test, though we had to prioritise them around remaining MVP features that still needed to be implemented first. Once those were in place, I evaluated the feedback and addressed it in order of impact.
+Following testing, we prioritised fixes around the remaining MVP work.
 
-The icon-led buttons were updated to be more descriptive, resolving the issue of actions being hard to distinguish at a glance. The "post a tip" button was removed entirely. That feature (a community tips and tricks page) was a stretch goal rather than an MVP requirement, and removing it eliminated the confusing misdirection to the recipe form. It can be reintroduced in a later stage when the full tips flow is built out as our future steps.
+The icon-led buttons were made more descriptive, and the "Post a Tip" feature was removed entirely. Since it was only a stretch goal, removing it eliminated the confusing navigation.
 
 ![The post a tip button that was removed](assets/reflection/postatip.png)
 
-The festive collections page was another feature we scoped out of the MVP. The concept was to group recipes by seasonal occasions, giving the community a reason to return around specific cultural events. It was designed but never wired up to real data in time, so it lives in the backlog for a future iteration.
+The Festive Collections page was also scoped out of the MVP. Although designed, it was never connected to real data and remains part of the backlog for future development.
 
 ![Festive collections page design](assets/reflection/festival-page.png)
 
-The repeated CTAs ("Share yours" and "Post recipe") were a lower priority. Both links correctly lead to the same page, and the duplication is intentional: the feed is designed to act as a home page that surfaces all key actions in context. In hindsight, the confusion here was likely a limitation of having only one participant who gave critical feedback; with a larger test group, this pattern would more likely have read as expected for a dashboard-style layout rather than as a design flaw.
+The repeated CTAs were intentionally left unchanged. Since both buttons lead to the same page, we felt the issue may have been influenced by the small sample size rather than being a fundamental design flaw.
 
 ## Functional Requirements
 
-All 4 main features we wanted for the MVP were shipped: recipe feed, recipe posting, ingredient finder map, and user profiles. We split responsibility across the 4 features. I was in charge of recipe posting, Patricia handled the map, and Amorino led the user profiles and the feed (with all of us contributing to the feed). All features met the functional requirements, but only to an extent. Even though this was more of a development-focused unit, we are still designers, and for most of the features the result is functional but nowhere near as user-friendly as we would want it to be.
+All four planned MVP features were delivered:
 
-A good example is the recipe posting form I was in charge of. The form works functionally in that everything links to the right destination and database, but there is so much more potential to it. I would consider it one of the most important features in the app, and right now it is just a single page form which does not feel very welcoming. What I imagine for the future is a walkthrough-style, step-by-step process that makes posting feel more engaging for content creators rather than tedious. That was a want though, and it had to be cut to the bare minimum for the MVP given our capacity.
+* Recipe feed
+* Recipe posting
+* Ingredient finder map
+* User profiles
 
-A lot of our time was spent getting the backend working and wiring everything together, which meant the front end had to wait. Since the backend side was new to all of us, it left less time to polish the UI. This shows most clearly in the map, which Patricia was in charge of. Most of the time was spent just getting the map functional, and even then the database is limited because it is meant to grow as the community contributes to it. Right now it only works with dummy data. When I was building the recipe posting form that connects to the map, I noticed that Leaflet does not have a lot of Asian grocery stores in its data. The solution I landed on was to let users pin the store location themselves on the map and enter the name manually so they can navigate back to it later. Moving forward, we would look into using something like Google Maps which has more comprehensive location data, so users can pin places more accurately.
+Responsibilities were divided across the team. I worked on recipe posting, Patricia handled the map, and Amorino led user profiles and the feed, with all of us contributing to the feed itself.
 
-We also specified that users could find ingredient locations, but we never defined what the experience should look like when no community entries exist yet for a given ingredient. That edge case only became visible once we were actually using the app.
+Although all features met the functional requirements, many of them are functional rather than polished. As designers, we know they could provide a much better experience.
+
+The recipe posting form is a good example. Everything works correctly, but it currently exists as a single-page form. Ideally, I would redesign it into a more guided, step-by-step experience that feels more engaging for creators. However, that level of polish had to be sacrificed to deliver the MVP.
+
+Because full stack development was new to all of us, much of our time went into understanding the backend and connecting everything together. As a result, UI improvements became secondary.
+
+This was especially noticeable with the ingredient map. Much of Patricia's time was spent simply getting the functionality working, and the map currently relies on dummy data because it is designed to grow with community contributions.
+
+While building the recipe form, I also realised that Leaflet lacked many Asian grocery locations. My solution was to let users manually pin stores and enter names themselves. In the future, we would likely explore Google Maps for more comprehensive location data.
+
+We also discovered edge cases we had not considered initially, such as what happens when an ingredient has no community entries yet. These issues only became visible once we started using the app ourselves.
 
 ## Lessons Learned
 
-The biggest thing I learned was how fast you have to move and adapt when developing full stack. A lot of this unit was self-paced, which meant a lot of the planning and responsibility fell on us, and we had to learn things while we were still scoping the project. It genuinely mimicked a real-world setting in that way.
+The biggest lesson I learned was how quickly you have to adapt when building full stack applications. Because the unit was largely self-directed, we had to plan, scope, and learn simultaneously. In many ways, it genuinely felt like a real-world project.
 
-One clear flaw looking back is that we did not define the concept with enough detail at the start. Our initial concept was very vague, and part of that was intentional so we could iterate based on what was actually feasible to build. But I think we could have been a lot more ambitious upfront and then cut from there. Because we started with a bare minimum concept, we just stayed there. If we had aimed higher from the beginning, I think we could have pushed the project a lot further.
+Looking back, I think our concept started too small. We intentionally kept it broad so we could stay realistic, but I now think it would have been better to start more ambitiously and cut features later. Because we began with the minimum, we largely stayed there.
 
-On the other hand, I am genuinely proud of how we worked as a team. We held up really well and collaborated smoothly using GitHub Projects, which was a first for all of us and honestly a workflow I really enjoyed. It made it easy to assign tasks and see where everyone was at. Our team was great at communicating, which made everything a lot easier. Big up Amo and Pat.
+On the other hand, I am genuinely proud of how we worked as a team. GitHub Projects was new to all of us, but it ended up becoming one of my favourite workflows. It made task management clear and helped us communicate effectively throughout the semester.
 
-SEAblings came out differently to what I expected initially. The visual identity Amorino developed made the whole webapp feel considered and put together, which was a real strength given that the branding was inspired by one of his favourite Thai dishes. What I think could have been stronger was the interactivity side of things, and that comes down to planning. That is something I will think about a lot more if I build something like this again.
+Big up Amo and Pat.
 
-DECO2017 was genuinely one of the most rewarding units I have taken in terms of learning. Who would have thought three designers could build a full stack webapp in a semester? It involved a lot of learning, and a lot of prompting (haha), but the skills I picked up feel relevant in a real way. This is the last selective I will take at USYD and I am glad I chose this one. I am keen to see where we can take SEAblings over the break, especially since I will not be back in Malaysia until December and will be missing the food. We will be the first ones to post recipes on there! :D
+SEAblings ended up looking different from what I originally imagined. Amorino's visual identity gave the entire web app a strong sense of personality, especially with branding inspired by one of his favourite Thai dishes.
+
+If I could strengthen one aspect, it would be the interactivity. That ultimately comes back to planning, and it is something I will think about much more in future projects.
+
+DECO2017 has genuinely been one of the most rewarding units I have taken. Who would have thought three designers could build a full stack web app in a semester?
+
+There was a lot of learning and a lot of prompting (haha), but the skills I picked up feel genuinely useful.
+
+This is the last selective I will take at USYD, and I am glad I chose this one.
+
+I am excited to see where we can take SEAblings over the break, especially since I will not be back in Malaysia until December and will definitely be missing the food.
+
+We will be the first ones posting recipes on there. :D
 
 <div class="polaroid-wrap">
   <figure class="polaroid">
